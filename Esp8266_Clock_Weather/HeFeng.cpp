@@ -48,7 +48,7 @@ void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) 
   std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
   client->setInsecure();
   HTTPClient https;
-  String url = "https://devapi.qweather.com/v7/weather/now?lang=en&location=" + location + "&key=" + key;
+  String url = "https://devapi.qweather.com/v7/weather/now?lang=en&gzip=n&location=" + location + "&key=" + key;
   Serial.print("[HTTPS] begin...now\n");
   if (https.begin(*client, url)) {  // HTTPS
     // start connection and send HTTP header
