@@ -48,7 +48,7 @@ void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) 
   std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
   client->setInsecure();
   HTTPClient https;
-  String url = "https://free-api.heweather.net/s6/weather/now?lang=en&location=" + location + "&key=" + key;
+  String url = "https://devapi.qweather.com/v7/weather/now?lang=en&location=" + location + "&key=" + key;
   Serial.print("[HTTPS] begin...now\n");
   if (https.begin(*client, url)) {  // HTTPS
     // start connection and send HTTP header
@@ -65,17 +65,17 @@ void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) 
         deserializeJson(jsonBuffer, payload);
         JsonObject root = jsonBuffer.as<JsonObject>();
 
-        String tmp = root["HeWeather6"][0]["now"]["tmp"];
+        String tmp = root["now"]["temp"];
         data->tmp = tmp;
-        String fl = root["HeWeather6"][0]["now"]["fl"];
+        String fl = root["now"]["feelsLike"];
         data->fl = fl;
-        String hum = root["HeWeather6"][0]["now"]["hum"];
+        String hum = root["now"]["humidity"];
         data->hum = hum;
-        String wind_sc = root["HeWeather6"][0]["now"]["wind_sc"];
+        String wind_sc = root["now"]["windScale"];
         data->wind_sc = wind_sc;
-        String cond_code = root["HeWeather6"][0]["now"]["cond_code"];
+        String cond_code = root["now"]["icon"];
         String meteoconIcon = getMeteoconIcon(cond_code);
-        String cond_txt = root["HeWeather6"][0]["now"]["cond_txt"];
+        String cond_txt = root["now"]["text"];
         data->cond_txt = cond_txt;
         data->iconMeteoCon = meteoconIcon;
 
