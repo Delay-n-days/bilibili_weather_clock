@@ -1,19 +1,18 @@
 
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#include <WiFiClientSecureBearSSL.h>
 #include "HeFeng.h"
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecureBearSSL.h>
 
-HeFeng::HeFeng() {
-}
+HeFeng::HeFeng() {}
 
-void HeFeng::fans(HeFengCurrentData *data, String id) {  //获取粉丝数
-  std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
+void HeFeng::fans(HeFengCurrentData *data, String id) { //获取粉丝数
+  std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
   client->setInsecure();
   HTTPClient https;
   String url = "https://api.bilibili.com/x/relation/stat?vmid=" + id;
   Serial.print("[HTTPS] begin...bilibili\n");
-  if (https.begin(*client, url)) {  // HTTPS
+  if (https.begin(*client, url)) { // HTTPS
     // start connection and send HTTP header
     int httpCode = https.GET();
     // httpCode will be negative on error
@@ -24,7 +23,7 @@ void HeFeng::fans(HeFengCurrentData *data, String id) {  //获取粉丝数
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
         String payload = https.getString();
         Serial.println(payload);
-        DynamicJsonDocument  jsonBuffer(2048);
+        DynamicJsonDocument jsonBuffer(2048);
         deserializeJson(jsonBuffer, payload);
         JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -43,14 +42,14 @@ void HeFeng::fans(HeFengCurrentData *data, String id) {  //获取粉丝数
   }
 }
 
-void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) {  //获取天气
+void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) { //获取天气
 
-  std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
+  std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
   client->setInsecure();
   HTTPClient https;
   String url = "https://devapi.qweather.com/v7/weather/now?lang=en&gzip=n&location=" + location + "&key=" + key;
   Serial.print("[HTTPS] begin...now\n");
-  if (https.begin(*client, url)) {  // HTTPS
+  if (https.begin(*client, url)) { // HTTPS
     // start connection and send HTTP header
     int httpCode = https.GET();
     // httpCode will be negative on error
@@ -61,7 +60,7 @@ void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) 
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
         String payload = https.getString();
         Serial.println(payload);
-        DynamicJsonDocument  jsonBuffer(2048);
+        DynamicJsonDocument jsonBuffer(3000);
         deserializeJson(jsonBuffer, payload);
         JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -74,11 +73,11 @@ void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) 
         String wind_sc = root["now"]["windScale"];
         data->wind_sc = wind_sc;
         String cond_code = root["now"]["icon"];
+        Serial.printf("111code: %s\n", cond_code);
         String meteoconIcon = getMeteoconIcon(cond_code);
         String cond_txt = root["now"]["text"];
         data->cond_txt = cond_txt;
         data->iconMeteoCon = meteoconIcon;
-
       }
     } else {
       Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
@@ -100,17 +99,16 @@ void HeFeng::doUpdateCurr(HeFengCurrentData *data, String key, String location) 
     data->cond_txt = "no network";
     data->iconMeteoCon = ")";
   }
-
 }
 
-void HeFeng::doUpdateFore(HeFengForeData *data, String key, String location) {  //获取预报
+void HeFeng::doUpdateFore(HeFengForeData *data, String key, String location) { //获取预报
 
-  std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
+  std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
   client->setInsecure();
   HTTPClient https;
   String url = "https://devapi.qweather.com/v7/weather/3d?lang=en&gzip=n&location=" + location + "&key=" + key;
   Serial.print("[HTTPS] begin...forecast\n");
-  if (https.begin(*client, url)) {  // HTTPS
+  if (https.begin(*client, url)) { // HTTPS
     // start connection and send HTTP header
     int httpCode = https.GET();
     // httpCode will be negative on error
@@ -121,7 +119,7 @@ void HeFeng::doUpdateFore(HeFengForeData *data, String key, String location) {  
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
         String payload = https.getString();
         Serial.println(payload);
-        DynamicJsonDocument  jsonBuffer(2048);
+        DynamicJsonDocument jsonBuffer(3000);
         deserializeJson(jsonBuffer, payload);
         JsonObject root = jsonBuffer.as<JsonObject>();
         int i;
@@ -135,6 +133,7 @@ void HeFeng::doUpdateFore(HeFengForeData *data, String key, String location) {  
           String cond_code = root["daily"][i]["iconDay"];
           String meteoconIcon = getMeteoconIcon(cond_code);
           data[i].iconMeteoCon = meteoconIcon;
+          Serial.printf("k+%d code: %s\n", i, cond_code);
         }
       }
     } else {
@@ -158,11 +157,10 @@ void HeFeng::doUpdateFore(HeFengForeData *data, String key, String location) {  
       data[i].iconMeteoCon = ")";
     }
   }
-
 }
 
-String HeFeng::getMeteoconIcon(String cond_code) {  //获取天气图标
-  if (cond_code == "100" || cond_code == "9006") {
+String HeFeng::getMeteoconIcon(String cond_code) { //获取天气图标
+  if (cond_code == "100" || cond_code == "150" || cond_code == "9006") {
     return "B";
   }
   if (cond_code == "999") {
@@ -180,7 +178,7 @@ String HeFeng::getMeteoconIcon(String cond_code) {  //获取天气图标
   if (cond_code == "499" || cond_code == "901") {
     return "G";
   }
-  if (cond_code == "103") {
+  if ((cond_code == "103") || (cond_code == "151") || (cond_code == "152") || (cond_code == "153")) {
     return "H";
   }
   if (cond_code == "502" || cond_code == "511" || cond_code == "512" || cond_code == "513") {
@@ -213,13 +211,13 @@ String HeFeng::getMeteoconIcon(String cond_code) {  //获取天气图标
   if (cond_code == "400" || cond_code == "408") {
     return "U";
   }
-  if (cond_code == "407") {
+  if ((cond_code == "407") || (cond_code == "350") || (cond_code == "351")) {
     return "V";
   }
   if (cond_code == "401" || cond_code == "402" || cond_code == "403" || cond_code == "409" || cond_code == "410") {
     return "W";
   }
-  if (cond_code == "304" || cond_code == "313" || cond_code == "404" || cond_code == "405" || cond_code == "406") {
+  if (cond_code == "304" || cond_code == "313" || cond_code == "404" || cond_code == "405" || cond_code == "406" || cond_code == "456" || cond_code == "457") {
     return "X";
   }
   if (cond_code == "101") {
